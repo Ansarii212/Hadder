@@ -75,14 +75,17 @@
 <button id="logoutBtn" style="display:none;">تسجيل الخروج</button>
 
 <div id="managerPage" style="display:none;">
-  <h2 id="schoolTitle"></h2>
+  <h1 id="schoolTitle"></h1>
+  
 <h3>إضافة معلم جديد</h3>
   <form id="addTeacherForm">
     <input type="text" id="teacherName" placeholder="اسم المعلم">
     <input type="text" id="teacherPhone" placeholder="رقم جوال المعلم">
     <input type="password" id="teacherPassword" placeholder="كلمة المرور">
     <button type="submit">إضافة معلم</button>
-  <h3>تقرير الحضور</h3>
+
+    
+  <h4>تقرير الحضور</h4>
   <input type="date" id="dateFilter">
   <table id="reportTable">
     <thead>
@@ -97,9 +100,8 @@
     </thead>
     <tbody></tbody>
   </table>
+    
   <button onclick="window.print()">طباعة التقرير</button>
-
-  
   </form>
 </div>
 
