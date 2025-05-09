@@ -370,9 +370,9 @@ document.getElementById("printTeachersBtn").addEventListener("click", () => {
   window.print();
 });
 
-<script>
+
   document.addEventListener("DOMContentLoaded", function () {
-    const formSection = document.getElementById("admin-register-form");
+    const formSection = document.getElementById("registerTitle");
 
     // تحقق إذا كان المدير سجل من قبل
     const alreadyRegistered = localStorage.getItem("admin_registered");
@@ -392,11 +392,11 @@ document.getElementById("printTeachersBtn").addEventListener("click", () => {
     localStorage.setItem("admin_registered", "true");
 
     // إخفاء النموذج
-    document.getElementById("admin-register-form").style.display = "none";
+    document.getElementById("registerTitle").style.display = "none";
 
     alert("تم التسجيل بنجاح!");
   }
-</script>
+
   
 </script>
 </body>
