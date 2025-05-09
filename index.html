@@ -20,7 +20,7 @@
       margin-bottom: 20px;
       box-shadow: 0 0 10px #ccc;
     }
-    input, button, select {
+    input, button {
       width: 100%;
       padding: 10px;
       margin: 8px 0;
@@ -38,9 +38,6 @@
     }
     th {
       background-color: #eee;
-    }
-    #dateSelector {
-      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -73,9 +70,6 @@
   </form>
 
   <h3>تقرير الحضور</h3>
-  <label for="dateSelector">اختر تاريخ:</label>
-  <select id="dateSelector"></select>
-  <h4 id="attendanceTitle"></h4>
   <table id="reportTable">
     <thead>
       <tr>
@@ -89,7 +83,6 @@
     </thead>
     <tbody></tbody>
   </table>
-  <button id="printReport">طباعة التقرير</button>
 </div>
 
 <div id="teacherPage" style="display:none;">
@@ -99,7 +92,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, push, onValue, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, get, child, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -107,7 +100,7 @@
     authDomain: "hamsa-6009e.firebaseapp.com",
     databaseURL: "https://hamsa-6009e-default-rtdb.firebaseio.com",
     projectId: "hamsa-6009e",
-    storageBucket: "hamsa-6009e.appspot.com",
+    storageBucket: "hamsa-6009e.firebasestorage.app",
     messagingSenderId: "998163671039",
     appId: "1:998163671039:web:d1930ea5b71a3a3fc729ca",
     measurementId: "G-PD1QB8X0FE"
@@ -120,20 +113,17 @@
   const registerForm = document.getElementById("registerForm");
   const loginForm = document.getElementById("loginForm");
   const addTeacherForm = document.getElementById("addTeacherForm");
-  const markAttendance = document.getElementById("markAttendance");
-  const attendanceTitle = document.getElementById("attendanceTitle");
-  const dateSelector = document.getElementById("dateSelector");
-  const printButton = document.getElementById("printReport");
 
   let currentUserId = null;
   let schoolLocation = null;
 
-  // عرض صفحة التسجيل فقط أول مرة
-  if (localStorage.getItem("registered")) {
-    registerForm.style.display = "none";
+  // التحقق إذا كان المستخدم قد سجل من قبل
+  if (localStorage.getItem("isRegistered") === "true") {
+    document.getElementById("registerForm").style.display = "none";
+    document.getElementById("loginForm").style.display = "block";
   }
 
-  // تسجيل المدير
+  // حساب المدير
   registerForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const name = managerName.value;
@@ -151,11 +141,14 @@
         currentUserId = uid;
         schoolLocation = { lat, lng };
 
-        set(ref(db, "managers/" + uid), { name, school, phone, lat, lng });
+        set(ref(db, "managers/" + uid), {
+          name, school, phone, lat, lng
+        });
+
         alert("تم تسجيل المدير بنجاح");
+        localStorage.setItem("isRegistered", "true"); // حفظ حالة التسجيل
         registerForm.style.display = "none";
-        localStorage.setItem("registered", "true");
-        loginForm.style.display = "block";
+        document.getElementById("loginForm").style.display = "block";
       });
     });
   });
@@ -171,19 +164,21 @@
       const uid = cred.user.uid;
       currentUserId = uid;
 
+      // تحقق إن كان مدير
       get(ref(db, "managers/" + uid)).then(snap => {
         if (snap.exists()) {
           const data = snap.val();
           schoolLocation = { lat: data.lat, lng: data.lng };
           document.getElementById("schoolTitle").innerText = `المدرسة: ${data.school} | المدير: ${data.name}`;
-          loginForm.style.display = "none";
+          document.getElementById("loginForm").style.display = "none";
           document.getElementById("managerPage").style.display = "block";
-          loadAvailableDates();
+          loadAttendance();
         } else {
+          // معلم
           get(ref(db, "teachers/" + uid)).then(snap => {
             if (snap.exists()) {
               document.getElementById("teacherPage").style.display = "block";
-              loginForm.style.display = "none";
+              document.getElementById("loginForm").style.display = "none";
               document.getElementById("teacherNameDisplay").innerText = snap.val().name;
             }
           });
@@ -202,19 +197,22 @@
 
     createUserWithEmailAndPassword(auth, email, password).then(cred => {
       const uid = cred.user.uid;
-      set(ref(db, "teachers/" + uid), { name, phone, managerId: currentUserId });
+      set(ref(db, "teachers/" + uid), {
+        name, phone, managerId: currentUserId
+      });
       alert("تم إضافة المعلم بنجاح");
       addTeacherForm.reset();
     });
   });
 
   // تحضير المعلم
-  markAttendance?.addEventListener("click", () => {
+  const markAttendance = document.getElementById("markAttendance");
+  markAttendance.addEventListener("click", () => {
     navigator.geolocation.getCurrentPosition(pos => {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
       const now = new Date();
-      const date = now.toLocaleDateString('ar-EG');
+      const date = now.toLocaleDateString();
       const time = now.toLocaleTimeString();
 
       const userId = auth.currentUser.uid;
@@ -226,7 +224,7 @@
           const mgr = mgrSnap.val();
           const distance = getDistance(mgr.lat, mgr.lng, lat, lng);
 
-          const newRef = push(ref(db, "attendance/" + managerId + "/" + date));
+          const newRef = push(ref(db, "attendance/" + managerId));
           set(newRef, {
             teacher: data.name,
             status: "حاضر",
@@ -243,42 +241,45 @@
     });
   });
 
-  // تحميل التواريخ المتاحة
-  function loadAvailableDates() {
-    const path = "attendance/" + currentUserId;
-    const datesRef = ref(db, path);
+  // تحميل التقرير
+  function loadAttendance() {
+    const tableBody = document.querySelector("#reportTable tbody");
+    tableBody.innerHTML = "";
 
-    onValue(datesRef, snapshot => {
-      const dates = snapshot.val();
-      dateSelector.innerHTML = "";
-      for (const date in dates) {
-        const option = document.createElement("option");
-        option.value = date;
-        option.innerText = date;
-        dateSelector.appendChild(option);
-      }
+    onValue(ref(db, "attendance/" + currentUserId), (snapshot) => {
+      tableBody.innerHTML = "";
+      snapshot.forEach(child => {
+        const data = child.val();
+        const row = `
+          <tr>
+            <td>${data.teacher}</td>
+            <td>${data.status}</td>
+            <td>${data.time}</td>
+            <td>${data.date}</td>
+            <td>${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}</td>
+            <td>${data.distance} متر</td>
+          </tr>
+        `;
+        tableBody.innerHTML += row;
+      });
     });
   }
 
-  // طباعة التقرير
-  printButton.addEventListener("click", () => {
-    window.print();
-  });
-
-  // حساب المسافة بين موقعين باستخدام قاعدة هافرسين
+  // دالة لحساب المسافة بين نقطتين
   function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // radius of Earth in kilometers
+    const R = 6371e3; // متر
     const φ1 = lat1 * Math.PI / 180;
     const φ2 = lat2 * Math.PI / 180;
     const Δφ = (lat2 - lat1) * Math.PI / 180;
     const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const d = R * c;
-    return d * 1000; // المسافة بالمتر
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c;
   }
 </script>
-
 </body>
 </html>
