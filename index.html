@@ -76,8 +76,12 @@
 
 <div id="managerPage" style="display:none;">
   <h2 id="schoolTitle"></h2>
-</div> 
-  <!-- تقرير الحضور أولاً -->
+<h3>إضافة معلم جديد</h3>
+  <form id="addTeacherForm">
+    <input type="text" id="teacherName" placeholder="اسم المعلم">
+    <input type="text" id="teacherPhone" placeholder="رقم جوال المعلم">
+    <input type="password" id="teacherPassword" placeholder="كلمة المرور">
+    <button type="submit">إضافة معلم</button>
   <h3>تقرير الحضور</h3>
   <input type="date" id="dateFilter">
   <table id="reportTable">
@@ -94,15 +98,8 @@
     <tbody></tbody>
   </table>
   <button onclick="window.print()">طباعة التقرير</button>
-  
 
-  <!-- إضافة معلم بعد تقرير الحضور -->
-  <h3>إضافة معلم جديد</h3>
-  <form id="addTeacherForm">
-    <input type="text" id="teacherName" placeholder="اسم المعلم">
-    <input type="text" id="teacherPhone" placeholder="رقم جوال المعلم">
-    <input type="password" id="teacherPassword" placeholder="كلمة المرور">
-    <button type="submit">إضافة معلم</button>
+  
   </form>
 </div>
 
