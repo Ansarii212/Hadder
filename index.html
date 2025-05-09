@@ -2,171 +2,169 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>تقرير المدير</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تقرير الحضور</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       direction: rtl;
-      background-color: #f4f4f4;
-      margin: 0;
-      padding: 20px;
-    }
-    .login-box, .report-box {
-      background: white;
-      padding: 20px;
-      margin: auto;
-      max-width: 600px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h2 {
-      text-align: center;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input[type="text"], input[type="password"], input[type="date"] {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 15px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
+    }
+    table, th, td {
+      border: 1px solid black;
     }
     th, td {
-      border: 1px solid #ccc;
       padding: 8px;
       text-align: center;
     }
-
+    h3 {
+      text-align: center;
+    }
+    /* إضافة تنسيق مخصص للطباعة */
     @media print {
       body * {
         visibility: hidden;
       }
-      #reportTable, #reportTable * {
+      #reportSection, #reportSection * {
         visibility: visible;
       }
-      #reportTable {
+      #reportSection {
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-      }
-      #printButton {
-        display: none;
       }
     }
   </style>
 </head>
 <body>
-  <div id="loginBox" class="login-box">
-    <h2>تسجيل دخول المدير</h2>
-    <label for="username">اسم المستخدم:</label>
-    <input type="text" id="username">
-    <label for="password">كلمة المرور:</label>
-    <input type="password" id="password">
-    <button onclick="login()">دخول</button>
-  </div>
 
-  <div id="reportBox" class="report-box" style="display: none;">
-    <div class="top-bar">
-      <input type="date" id="dateFilter" onchange="loadReport()">
-      <button onclick="logout()">تسجيل الخروج</button>
+  <div id="managerPage">
+    <!-- نموذج تسجيل المدير (يتم إخفاؤه بعد التسجيل) -->
+    <div id="loginForm" style="display:block;">
+      <h3>تسجيل دخول المدير</h3>
+      <input type="text" id="username" placeholder="اسم المستخدم">
+      <input type="password" id="password" placeholder="كلمة المرور">
+      <button onclick="loginManager()">تسجيل الدخول</button>
     </div>
 
-    <h2>تقرير اليوم</h2>
+    <!-- صفحة التقرير بعد تسجيل المدير -->
+    <div id="attendanceReport" style="display:none;">
+      <h3>تقرير الحضور</h3>
+      <label for="filterDate">اختر التاريخ: </label>
+      <input type="date" id="filterDate">
+      
+      <h3 id="reportTitle" style="display:none;">تقرير الحضور بتاريخ: <span id="selectedDate"></span></h3>
+      <button id="printReportBtn" style="display:none;">طباعة التقرير</button>
 
-    <table id="reportTable">
-      <thead>
-        <tr>
-          <th>الاسم</th>
-          <th>الحضور</th>
-          <th>الملاحظات</th>
-        </tr>
-      </thead>
-      <tbody id="reportBody">
-        <!-- البيانات هنا -->
-      </tbody>
-    </table>
-
-    <button id="printButton" onclick="window.print()">طباعة التقرير</button>
+      <table id="reportTable">
+        <thead>
+          <tr>
+            <th>اسم المعلم</th>
+            <th>الحالة</th>
+            <th>الوقت</th>
+            <th>التاريخ</th>
+            <th>الإحداثيات</th>
+            <th>المسافة</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      if (localStorage.getItem("managerLoggedIn") === "true") {
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("reportBox").style.display = "block";
-        loadReport();
-      }
-    });
+    // إعداد Firebase
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    function login() {
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
+    let currentUserId = "";
 
-      if (username === "admin" && password === "1234") {
-        localStorage.setItem("managerLoggedIn", "true");
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("reportBox").style.display = "block";
-        loadReport();
+    // تسجيل دخول المدير
+    function loginManager() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      if (username === 'admin' && password === 'admin123') {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('attendanceReport').style.display = 'block';
+        loadAttendance();
       } else {
-        alert("بيانات الدخول غير صحيحة");
+        alert("البيانات غير صحيحة");
       }
     }
 
-    function logout() {
-      const confirmLogout = confirm("هل أنت متأكد من تسجيل الخروج؟");
-      if (confirmLogout) {
-        localStorage.removeItem("managerLoggedIn");
-        location.reload();
-      }
-    }
+    // تحميل تقرير الحضور
+    function loadAttendance() {
+      const filterDate = document.getElementById("filterDate");
+      const tableBody = document.getElementById("tableBody");
 
-    function loadReport() {
-      const date = document.getElementById("dateFilter").value;
-      const tbody = document.getElementById("reportBody");
-      tbody.innerHTML = "";
+      filterDate.addEventListener('change', updateTable);
 
-      // هنا يتم تحميل البيانات بناءً على التاريخ
-      if (date) {
-        // بيانات وهمية كمثال
-        const dummyData = [
-          { name: "أحمد", attendance: "حاضر", notes: "لا يوجد" },
-          { name: "سارة", attendance: "غائب", notes: "مريضة" },
-          { name: "خالد", attendance: "حاضر", notes: "" }
-        ];
+      // دالة التحديث لعرض البيانات بناءً على التاريخ
+      const updateTable = () => {
+        const selected = filterDate.value;
+        if (!selected) {
+          document.getElementById("reportTitle").style.display = "none";
+          document.getElementById("printReportBtn").style.display = "none";
+          tableBody.innerHTML = "";
+          return;
+        }
 
-        dummyData.forEach(item => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${item.name}</td>
-            <td>${item.attendance}</td>
-            <td>${item.notes}</td>
-          `;
-          tbody.appendChild(row);
+        document.getElementById("reportTitle").style.display = "block";
+        document.getElementById("selectedDate").innerText = selected;
+        document.getElementById("printReportBtn").style.display = "inline-block";
+
+        get(ref(db, "attendance/" + currentUserId)).then(snapshot => {
+          tableBody.innerHTML = "";
+          snapshot.forEach(child => {
+            const data = child.val();
+            if (data.date === selected) {
+              const row = `
+                <tr>
+                  <td>${data.teacher}</td>
+                  <td>${data.status}</td>
+                  <td>${data.time}</td>
+                  <td>${data.date}</td>
+                  <td>${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}</td>
+                  <td>${data.distance} متر</td>
+                </tr>
+              `;
+              tableBody.innerHTML += row;
+            }
+          });
         });
-      }
+      };
     }
+
+    // طباعة التقرير
+    document.getElementById("printReportBtn").addEventListener("click", () => {
+      const originalContent = document.body.innerHTML;
+      const reportSection = `
+        <div id="reportSection">
+          <h3 style="text-align:center;">تقرير الحضور بتاريخ: ${document.getElementById("selectedDate").innerText}</h3>
+          ${document.getElementById("reportTable").outerHTML}
+        </div>
+      `;
+      document.body.innerHTML = reportSection;
+      window.print();
+      document.body.innerHTML = originalContent;
+      location.reload(); // لإعادة تحميل الصفحة بعد الطباعة
+    });
   </script>
+
 </body>
 </html>
