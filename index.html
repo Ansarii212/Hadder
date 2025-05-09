@@ -74,14 +74,8 @@
 
 <div id="managerPage" style="display:none;">
   <h2 id="schoolTitle"></h2>
-  <h3>إضافة معلم جديد</h3>
-  <form id="addTeacherForm">
-    <input type="text" id="teacherName" placeholder="اسم المعلم">
-    <input type="text" id="teacherPhone" placeholder="رقم جوال المعلم">
-    <input type="password" id="teacherPassword" placeholder="كلمة المرور">
-    <button type="submit">إضافة معلم</button>
-  </form>
-
+  
+  <!-- تقرير الحضور أولاً -->
   <h3>تقرير الحضور</h3>
   <input type="date" id="dateFilter">
   <table id="reportTable">
@@ -98,6 +92,15 @@
     <tbody></tbody>
   </table>
   <button onclick="window.print()">طباعة التقرير</button>
+  
+  <!-- إضافة معلم بعد تقرير الحضور -->
+  <h3>إضافة معلم جديد</h3>
+  <form id="addTeacherForm">
+    <input type="text" id="teacherName" placeholder="اسم المعلم">
+    <input type="text" id="teacherPhone" placeholder="رقم جوال المعلم">
+    <input type="password" id="teacherPassword" placeholder="كلمة المرور">
+    <button type="submit">إضافة معلم</button>
+  </form>
 </div>
 
 <div id="teacherPage" style="display:none;">
@@ -258,64 +261,92 @@
     tableBody.innerHTML = "";
 
     const dateFilter = document.getElementById("dateFilter");
-    dateFilter.addEventListener("change", () => {
-      const selectedDate = dateFilter.value;
-      renderReport(selectedDate);
+    const path = "attendance/" + currentUserId;
+
+    onValue(ref(db, path), (snapshot) => {
+      tableBody.innerHTML = "";
+      snapshot.forEach(child => {
+        const data = child.val();
+        if (!dateFilter.value || dateFilter.value === data.date) {
+          const row = `
+            <tr>
+              <td>${data.teacher}</td>
+              <td>${data.status}</td>
+              <td>${data.time}</td>
+              <td>${data.date}</td>
+              <td>${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}</td>
+              <td>${data.distance} م</td>
+            </tr>
+          `;
+          tableBody.innerHTML += row;
+        }
+      });
     });
 
-    onValue(ref(db, "attendance/" + currentUserId), (snapshot) => {
-      window.attendanceData = [];
-      snapshot.forEach(child => {
-        window.attendanceData.push(child.val());
-      });
-      renderReport(dateFilter.value);
-    });
+    loadTeachersReport(); // تحميل تقرير المعلمين تلقائيًا
   }
 
-  function renderReport(filterDate) {
-    const tableBody = document.querySelector("#reportTable tbody");
-    tableBody.innerHTML = "";
-    const filtered = window.attendanceData.filter(item => !filterDate || item.date === filterDate);
-    filtered.forEach(data => {
-      const row = `
+  function loadTeachersReport() {
+    const existingTable = document.getElementById("teachersReportTable");
+    if (existingTable) existingTable.remove();
+
+    const table = document.createElement("table");
+    table.id = "teachersReportTable";
+    table.innerHTML = `
+      <thead>
         <tr>
-          <td>${data.teacher}</td>
-          <td>${data.status}</td>
-          <td>${data.time}</td>
-          <td>${data.date}</td>
-          <td>${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}</td>
-          <td>${data.distance} متر</td>
+          <th>اسم المعلم</th>
+          <th>رقم الجوال</th>
+          <th>كلمة المرور</th>
         </tr>
-      `;
-      tableBody.innerHTML += row;
+      </thead>
+      <tbody></tbody>
+    `;
+    document.getElementById("managerPage").prepend(table);
+
+    const btn = document.createElement("button");
+    btn.textContent = "طباعة تقرير المعلمين";
+    btn.onclick = () => window.print();
+    document.getElementById("managerPage").prepend(btn);
+
+    const tableBody = table.querySelector("tbody");
+    onValue(ref(db, "teachers"), (snapshot) => {
+      tableBody.innerHTML = "";
+      snapshot.forEach(child => {
+        const data = child.val();
+        if (data.managerId === currentUserId) {
+          const row = `
+            <tr>
+              <td>${data.name}</td>
+              <td>${data.phone}</td>
+              <td>${data.password || "***"}</td>
+            </tr>
+          `;
+          tableBody.innerHTML += row;
+        }
+      });
     });
   }
 
   function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3;
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2 - lat1) * Math.PI/180;
+    const Δλ = (lon2 - lon1) * Math.PI/180;
+
     const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
               Math.cos(φ1) * Math.cos(φ2) *
               Math.sin(Δλ/2) * Math.sin(Δλ/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
     return R * c;
   }
 
   logoutBtn.addEventListener("click", () => {
-    const confirmLogout = confirm("هل أنت متأكد من تسجيل الخروج؟");
-    if (confirmLogout) {
-      signOut(auth).then(() => {
-        location.reload();
-      });
-    }
-  });
-
-  window.addEventListener("beforeunload", (e) => {
-    e.preventDefault();
-    e.returnValue = '';
+    signOut(auth).then(() => {
+      location.reload();
+    });
   });
 </script>
 </body>
