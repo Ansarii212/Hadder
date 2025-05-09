@@ -39,23 +39,19 @@
     th {
       background-color: #eee;
     }
-#logoutBtn {
-  position: fixed;
-  top: 10px;  /* أعلى الشاشة */
-  left: 10px;  /* على الجهة اليسرى */
-  background-color: #e74c3c;  /* اللون الأحمر */
-  color: white;
-  border: none;
-  padding: 10px;  /* جعل الزر صغير */
-  border-radius: 50%;  /* جعل الزر دائري */
-  font-size: 18px;  /* حجم الأيقونة */
-  cursor: pointer;
-  z-index: 1000;  /* تأكد من أنه فوق العناصر الأخرى */
-}
-
-#logoutBtn i {
-  margin: 0;  /* إزالة الهوامش من الأيقونة */
-}
+  .logout-btn {
+      position: absolute;
+      left: 1rem;
+      top: 1rem;
+      background: white;
+      color: #3399ff;
+      border: none;
+      padding: 0.3rem 0.7rem;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      display: none;
+    }
   </style>
 </head>
 <body>
