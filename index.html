@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>نظام التحضير</title>
+  <title>نظام تحضير الموظفين</title>
   <style>
     body {
       font-family: 'Arial', sans-serif;
@@ -41,12 +41,12 @@
     }
     #logoutBtn {
       position: fixed;
-      top: 10px;
-      left: 10px;
+      top: 5px;
+      left: 5px;
       background-color: #e74c3c;
       color: white;
       border: none;
-      padding: 10px 20px;
+      padding: 5px 5px;
       cursor: pointer;
       border-radius: 5px;
     }
@@ -74,6 +74,16 @@
 
 <div id="managerPage" style="display:none;">
   <h2 id="schoolTitle"></h2>
+
+  <!-- إضافة معلم بعد تقرير الحضور -->
+  <h3>إضافة معلم جديد</h3>
+  <form id="addTeacherForm">
+    <input type="text" id="teacherName" placeholder="اسم المعلم">
+    <input type="text" id="teacherPhone" placeholder="رقم جوال المعلم">
+    <input type="password" id="teacherPassword" placeholder="كلمة المرور">
+    <button type="submit">إضافة معلم</button>
+  </form>
+</div>
   
   <!-- تقرير الحضور أولاً -->
   <h3>تقرير الحضور</h3>
@@ -93,15 +103,7 @@
   </table>
   <button onclick="window.print()">طباعة التقرير</button>
   
-  <!-- إضافة معلم بعد تقرير الحضور -->
-  <h3>إضافة معلم جديد</h3>
-  <form id="addTeacherForm">
-    <input type="text" id="teacherName" placeholder="اسم المعلم">
-    <input type="text" id="teacherPhone" placeholder="رقم جوال المعلم">
-    <input type="password" id="teacherPassword" placeholder="كلمة المرور">
-    <button type="submit">إضافة معلم</button>
-  </form>
-</div>
+
 
 <div id="teacherPage" style="display:none;">
   <h2>مرحبًا <span id="teacherNameDisplay"></span></h2>
