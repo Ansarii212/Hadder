@@ -2,320 +2,156 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>نظام التحضير</title>
+  <title>تقرير الحضور</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <style>
     body {
-      font-family: 'Arial', sans-serif;
-      text-align: center;
-      background-color: #f7f7f7;
-      padding: 20px;
+      font-family: Arial, sans-serif;
       direction: rtl;
-    }
-    form, table {
-      margin: auto;
-      max-width: 400px;
-      background: white;
+      background-color: #f4f4f4;
       padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      box-shadow: 0 0 10px #ccc;
     }
-    input, button, select {
+    h1 {
+      text-align: center;
+    }
+    #reportTable {
       width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      font-size: 18px;
+      border-collapse: collapse;
+      margin-top: 20px;
     }
-    table {
-      width: 90%;
-      max-width: 800px;
-      margin-top: 30px;
-    }
-    th, td {
+    #reportTable th, #reportTable td {
       border: 1px solid #ccc;
       padding: 10px;
-      font-size: 16px;
+      text-align: center;
     }
-    th {
+    #reportTable th {
       background-color: #eee;
     }
-    #dateSelector {
-      margin-bottom: 10px;
+    select {
+      padding: 10px;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
 
-<h2>تسجيل المدير</h2>
-<form id="registerForm">
-  <input type="text" id="managerName" placeholder="اسم المدير" required>
-  <input type="text" id="schoolName" placeholder="اسم المدرسة" required>
-  <input type="text" id="managerPhone" placeholder="رقم الجوال" required>
-  <input type="password" id="managerPassword" placeholder="كلمة المرور" required>
-  <button type="submit">تسجيل المدير</button>
-</form>
+<h1>تقرير الحضور</h1>
 
-<h2>تسجيل الدخول</h2>
-<form id="loginForm">
-  <input type="text" id="loginPhone" placeholder="رقم الجوال">
-  <input type="password" id="loginPassword" placeholder="كلمة المرور">
-  <button type="submit">دخول</button>
-</form>
+<label for="dateSelect">اختر التاريخ:</label>
+<select id="dateSelect"></select>
 
-<div id="managerPage" style="display:none;">
-  <h2 id="schoolTitle"></h2>
-  <h3>إضافة معلم جديد</h3>
-  <form id="addTeacherForm">
-    <input type="text" id="teacherName" placeholder="اسم المعلم">
-    <input type="text" id="teacherPhone" placeholder="رقم جوال المعلم">
-    <input type="password" id="teacherPassword" placeholder="كلمة المرور">
-    <button type="submit">إضافة معلم</button>
-  </form>
+<h2 id="attendanceTitle"></h2>
+<table id="reportTable">
+  <thead>
+    <tr>
+      <th>اسم الطالب</th>
+      <th>الصف</th>
+      <th>رقم الجوال</th>
+      <th>الوقت</th>
+      <th>اليوم</th>
+      <th>تاريخ اليوم</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <h3>تقرير الحضور</h3>
-  <label for="dateSelector">اختر تاريخ:</label>
-  <select id="dateSelector"></select>
-  <h4 id="attendanceTitle"></h4>
-  <table id="reportTable">
-    <thead>
-      <tr>
-        <th>اسم المعلم</th>
-        <th>الحضور</th>
-        <th>الوقت</th>
-        <th>التاريخ</th>
-        <th>الإحداثيات</th>
-        <th>المسافة (متر)</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <button id="printReport">طباعة التقرير</button>
-</div>
-
-<div id="teacherPage" style="display:none;">
-  <h2>مرحبًا <span id="teacherNameDisplay"></span></h2>
-  <button id="markAttendance">تحضير الآن</button>
-</div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, push, onValue, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
+<script>
+  // إعداد Firebase
   const firebaseConfig = {
-    apiKey: "AIzaSyCr4T8GLRxtf_6LNrokjKvmBOwSkuGO5yQ",
-    authDomain: "hamsa-6009e.firebaseapp.com",
-    databaseURL: "https://hamsa-6009e-default-rtdb.firebaseio.com",
-    projectId: "hamsa-6009e",
-    storageBucket: "hamsa-6009e.appspot.com",
-    messagingSenderId: "998163671039",
-    appId: "1:998163671039:web:d1930ea5b71a3a3fc729ca",
-    measurementId: "G-PD1QB8X0FE"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
   };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const auth = getAuth();
+  const managerId = "demo123"; // غيّر هذا حسب المستخدم
 
-  const registerForm = document.getElementById("registerForm");
-  const loginForm = document.getElementById("loginForm");
-  const addTeacherForm = document.getElementById("addTeacherForm");
-  const markAttendance = document.getElementById("markAttendance");
+  const dateSelect = document.getElementById("dateSelect");
   const attendanceTitle = document.getElementById("attendanceTitle");
-  const dateSelector = document.getElementById("dateSelector");
-  const printButton = document.getElementById("printReport");
+  const reportTableBody = document.querySelector("#reportTable tbody");
 
-  let currentUserId = null;
-  let schoolLocation = null;
-
-  // عرض صفحة التسجيل فقط أول مرة
-  if (localStorage.getItem("registered")) {
-    registerForm.style.display = "none";
-  }
-
-  // تسجيل المدير
-  registerForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const name = managerName.value;
-    const school = schoolName.value;
-    const phone = managerPhone.value;
-    const password = managerPassword.value;
-    const email = phone + "@admin.com";
-
-    navigator.geolocation.getCurrentPosition(pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
-      createUserWithEmailAndPassword(auth, email, password).then(userCred => {
-        const uid = userCred.user.uid;
-        currentUserId = uid;
-        schoolLocation = { lat, lng };
-
-        set(ref(db, "managers/" + uid), { name, school, phone, lat, lng });
-        alert("تم تسجيل المدير بنجاح");
-        registerForm.style.display = "none";
-        localStorage.setItem("registered", "true");
-        loginForm.style.display = "block";
-      });
-    });
-  });
-
-  // تسجيل الدخول
-  loginForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const phone = loginPhone.value;
-    const password = loginPassword.value;
-    const email = phone + "@admin.com";
-
-    signInWithEmailAndPassword(auth, email, password).then(cred => {
-      const uid = cred.user.uid;
-      currentUserId = uid;
-
-      get(ref(db, "managers/" + uid)).then(snap => {
-        if (snap.exists()) {
-          const data = snap.val();
-          schoolLocation = { lat: data.lat, lng: data.lng };
-          document.getElementById("schoolTitle").innerText = `المدرسة: ${data.school} | المدير: ${data.name}`;
-          loginForm.style.display = "none";
-          document.getElementById("managerPage").style.display = "block";
-          loadAvailableDates();
-        } else {
-          get(ref(db, "teachers/" + uid)).then(snap => {
-            if (snap.exists()) {
-              document.getElementById("teacherPage").style.display = "block";
-              loginForm.style.display = "none";
-              document.getElementById("teacherNameDisplay").innerText = snap.val().name;
-            }
-          });
-        }
-      });
-    });
-  });
-
-  // إضافة معلم
-  addTeacherForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const name = teacherName.value;
-    const phone = teacherPhone.value;
-    const password = teacherPassword.value;
-    const email = phone + "@admin.com";
-
-    createUserWithEmailAndPassword(auth, email, password).then(cred => {
-      const uid = cred.user.uid;
-      set(ref(db, "teachers/" + uid), { name, phone, managerId: currentUserId });
-      alert("تم إضافة المعلم بنجاح");
-      addTeacherForm.reset();
-    });
-  });
-
-  // تحضير المعلم
-  markAttendance?.addEventListener("click", () => {
-    navigator.geolocation.getCurrentPosition(pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      const now = new Date();
-      const date = now.toLocaleDateString('ar-EG');
-      const time = now.toLocaleTimeString();
-
-      const userId = auth.currentUser.uid;
-      get(ref(db, "teachers/" + userId)).then(snap => {
-        const data = snap.val();
-        const managerId = data.managerId;
-
-        get(ref(db, "managers/" + managerId)).then(mgrSnap => {
-          const mgr = mgrSnap.val();
-          const distance = getDistance(mgr.lat, mgr.lng, lat, lng);
-
-          const newRef = push(ref(db, "attendance/" + managerId + "/" + date));
-          set(newRef, {
-            teacher: data.name,
-            status: "حاضر",
-            time,
-            date,
-            lat,
-            lng,
-            distance: Math.round(distance)
-          });
-
-          alert("تم تسجيل الحضور");
-        });
-      });
-    });
-  });
-
-  // تحميل التواريخ المتاحة
   function loadAvailableDates() {
-    const path = "attendance/" + currentUserId;
-    const datesRef = ref(db, path);
+    const attendanceRef = db.ref(`attendance/${managerId}`);
+    attendanceRef.once("value", (snapshot) => {
+      const dates = [];
+      snapshot.forEach(child => {
+        dates.push(child.key);
+      });
 
-    onValue(datesRef, (snapshot) => {
-      dateSelector.innerHTML = "";
-      const dates = Object.keys(snapshot.val() || {});
+      dateSelect.innerHTML = "";
+      if (dates.length === 0) {
+        attendanceTitle.innerText = "لا توجد بيانات حضور متاحة";
+        reportTableBody.innerHTML = "<tr><td colspan='6'>لا يوجد حضور مسجل</td></tr>";
+        return;
+      }
+
+      dates.sort((a, b) => new Date(b) - new Date(a));
       dates.forEach(date => {
         const option = document.createElement("option");
         option.value = date;
         option.textContent = date;
-        dateSelector.appendChild(option);
+        dateSelect.appendChild(option);
       });
-      if (dates.length > 0) {
-        dateSelector.value = dates[dates.length - 1];
-        loadAttendanceByDate(dates[dates.length - 1]);
+
+      loadAttendance(dates[0]);
+    });
+  }
+
+  function loadAttendance(date) {
+    const attendanceRef = db.ref(`attendance/${managerId}/${date}`);
+    attendanceRef.once("value", (snapshot) => {
+      attendanceTitle.innerText = `تقرير الحضور ليوم: ${date}`;
+      reportTableBody.innerHTML = "";
+      if (!snapshot.exists()) {
+        reportTableBody.innerHTML = "<tr><td colspan='6'>لا يوجد حضور مسجل لهذا اليوم</td></tr>";
+        return;
       }
-    });
-  }
 
-  // تحميل التقرير حسب التاريخ
-  dateSelector.addEventListener("change", () => {
-    loadAttendanceByDate(dateSelector.value);
-  });
-
-  function loadAttendanceByDate(selectedDate) {
-    attendanceTitle.innerText = `تقرير حضور المعلمين عن يوم: ${selectedDate}`;
-    const tableBody = document.querySelector("#reportTable tbody");
-    tableBody.innerHTML = "";
-
-    const path = "attendance/" + currentUserId + "/" + selectedDate;
-    onValue(ref(db, path), (snapshot) => {
-      tableBody.innerHTML = "";
       snapshot.forEach(child => {
-        const data = child.val();
-        const row = `
-          <tr>
-            <td>${data.teacher}</td>
-            <td>${data.status}</td>
-            <td>${data.time}</td>
-            <td>${data.date}</td>
-            <td>${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}</td>
-            <td>${data.distance} متر</td>
-          </tr>
+        const record = child.val();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${record.name}</td>
+          <td>${record.grade}</td>
+          <td>${record.phone}</td>
+          <td>${record.time}</td>
+          <td>${record.day}</td>
+          <td>${record.date}</td>
         `;
-        tableBody.innerHTML += row;
+        reportTableBody.appendChild(tr);
       });
     });
   }
 
-  // حساب المسافة
-  function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3;
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
+  dateSelect.addEventListener("change", () => {
+    const selectedDate = dateSelect.value;
+    loadAttendance(selectedDate);
+  });
 
-    const a = Math.sin(Δφ / 2) ** 2 +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+  window.onload = () => {
+    loadAvailableDates();
+  };
+
+  // تسجيل الحضور - كمثال
+  function markAttendance(name, grade, phone) {
+    const now = new Date();
+    const time = now.toLocaleTimeString('ar-EG');
+    const date = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+    const day = now.toLocaleDateString('ar-EG', { weekday: 'long' });
+
+    const attendanceRef = db.ref(`attendance/${managerId}/${date}`);
+    const newRecord = attendanceRef.push();
+    newRecord.set({ name, grade, phone, time, date, day });
   }
 
-  // طباعة التقرير
-  printButton.addEventListener("click", () => {
-    const originalTitle = document.title;
-    document.title = attendanceTitle.innerText;
-    window.print();
-    document.title = originalTitle;
-  });
+  // مثال تسجيل حضور (يمكنك حذفه في الإنتاج)
+  // markAttendance("محمد علي", "الصف الثاني", "0555555555");
 </script>
 
 </body>
