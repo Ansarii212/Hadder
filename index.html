@@ -55,15 +55,14 @@
 <body>
 
 <h2 id="registerTitle">تسجيل المدير</h2>
-<form onsubmit="submitManagerForm(event)">
-  <!-- عناصر النموذج هنا -->
+<form id="registerForm">
   <input type="text" id="managerName" placeholder="اسم المدير" required>
   <input type="text" id="schoolName" placeholder="اسم المدرسة" required>
   <input type="text" id="managerPhone" placeholder="رقم الجوال" required>
   <input type="password" id="managerPassword" placeholder="كلمة المرور" required>
-  
+  <button type="submit">تسجيل المدير</button>
 </form>
-<div class="container" id="adminPanel" style="display:none;">
+
 <h2>تسجيل الدخول</h2>
 <form id="loginForm">
   <input type="text" id="loginPhone" placeholder="رقم الجوال">
@@ -82,18 +81,7 @@
     <input type="password" id="teacherPassword" placeholder="كلمة المرور">
     <button type="submit">إضافة معلم</button>
   </form>
-<h3>قائمة المعلمين المسجلين</h3>
-<button id="showTeachersBtn">عرض المعلمين</button>
-<table id="teachersTable" style="display:none; margin-top: 20px;">
-  <thead>
-    <tr>
-      <th>الاسم</th>
-      <th>رقم الجوال</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-<button id="printTeachersBtn" style="display:none; margin-top: 10px;">طباعة</button>
+
   <h3>تقرير الحضور</h3>
   <input type="date" id="dateFilter">
   <table id="reportTable">
@@ -146,20 +134,11 @@
   let schoolLocation = null;
 
   // إخفاء نموذج تسجيل المدير إذا تم مسبقًا
-  document.addEventListener("DOMContentLoaded", function () {
-    const registerForm = document.getElementById("registerform");
-
-    if (localStorage.getItem("managerRegistered")) {
-      registerForm.style.display = "none";
-    }
-  });
-
-  function submitManagerForm(event) {
-    event.preventDefault();
-    localStorage.setItem("managerRegistered", "true");
-    document.getElementById("registerform").style.display = "none";
-    alert("تم التسجيل كمدير!");
+  if (localStorage.getItem("managerRegistered") === "true") {
+    registerForm.style.display = "none";
+    document.getElementById("registerTitle").style.display = "none";
   }
+
   registerForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const name = managerName.value;
@@ -240,19 +219,6 @@
     });
   });
 
-document.addEventListener("DOMContentLoaded", function () {
-  const adminSection = document.getElementById("admin-register-section");
-  const hasSeen = localStorage.getItem("admin_register_seen");
-
-  if (hasSeen) {
-    // المستخدم سبق وشاف التسجيل - نخفيه
-    adminSection.style.display = "none";
-  } else {
-    // أول مرة، نظهره ونسجل في localStorage
-    localStorage.setItem("admin_register_seen", "true");
-  }
-});
-  
   document.getElementById("markAttendance").addEventListener("click", () => {
     navigator.geolocation.getCurrentPosition(pos => {
       const lat = pos.coords.latitude;
@@ -351,36 +317,6 @@ document.addEventListener("DOMContentLoaded", function () {
     e.preventDefault();
     e.returnValue = '';
   });
-  document.getElementById("showTeachersBtn").addEventListener("click", () => {
-  const table = document.getElementById("teachersTable");
-  const printBtn = document.getElementById("printTeachersBtn");
-  const tbody = table.querySelector("tbody");
-
-  tbody.innerHTML = ""; // تفريغ الجدول قبل إعادة التعبئة
-
-  get(ref(db, "teachers")).then(snapshot => {
-    snapshot.forEach(child => {
-      const data = child.val();
-      if (data.managerId === currentUserId) {
-        const row = `
-          <tr>
-            <td>${data.name}</td>
-            <td>${data.phone}</td>
-          </tr>
-        `;
-        tbody.innerHTML += row;
-      }
-    });
-    table.style.display = "table";
-    printBtn.style.display = "inline-block";
-  });
-});
-
-document.getElementById("printTeachersBtn").addEventListener("click", () => {
-  window.print();
-});
-
-
 </script>
 </body>
 </html>
