@@ -60,7 +60,7 @@
   <input type="text" id="schoolName" placeholder="اسم المدرسة" required>
   <input type="text" id="managerPhone" placeholder="رقم الجوال" required>
   <input type="password" id="managerPassword" placeholder="كلمة المرور" required>
-  <button type="submit">تسجيل المدير</button>
+  
 </form>
 <div class="container" id="adminPanel" style="display:none;">
 <h2>تسجيل الدخول</h2>
@@ -230,6 +230,19 @@
     });
   });
 
+document.addEventListener("DOMContentLoaded", function () {
+  const adminSection = document.getElementById("admin-register-section");
+  const hasSeen = localStorage.getItem("admin_register_seen");
+
+  if (hasSeen) {
+    // المستخدم سبق وشاف التسجيل - نخفيه
+    adminSection.style.display = "none";
+  } else {
+    // أول مرة، نظهره ونسجل في localStorage
+    localStorage.setItem("admin_register_seen", "true");
+  }
+});
+  
   document.getElementById("markAttendance").addEventListener("click", () => {
     navigator.geolocation.getCurrentPosition(pos => {
       const lat = pos.coords.latitude;
@@ -357,18 +370,7 @@ document.getElementById("printTeachersBtn").addEventListener("click", () => {
   window.print();
 });
 
-document.addEventListener("DOMContentLoaded", function () {
-  const adminSection = document.getElementById("admin-register-section");
-  const hasSeen = localStorage.getItem("admin_register_seen");
 
-  if (hasSeen) {
-    // المستخدم سبق وشاف التسجيل - نخفيه
-    adminSection.style.display = "none";
-  } else {
-    // أول مرة، نظهره ونسجل في localStorage
-    localStorage.setItem("admin_register_seen", "true");
-  }
-});
   
 </script>
 </body>
